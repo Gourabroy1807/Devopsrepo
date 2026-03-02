@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>3D Rose - For You</title>
+    <style>
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #050505; }
+        
+        /* Centered Background Text Layer */
+        #text-background {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            color: rgba(255, 255, 255, 0.18); 
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.8;
+            padding: 50px;
+            box-sizing: border-box; /* Prevents text from cutting off */
+            text-align: center; /* Centers the text */
+            overflow: hidden;
+            z-index: 1;
+            user-select: none;
+            transition: color 0.6s ease, opacity 0.6s ease;
+            animation: scrollText 160s linear infinite;
+            mask-image: radial-gradient(circle, transparent 10%, black 90%);
+            -webkit-mask-image: radial-gradient(circle, transparent 10%, black 90%);
+        }
+
+        body:hover #text-background {
+            color: rgba(255, 255, 255, 0.7); 
+            mask-image: none;
+            -webkit-mask-image: none;
+        }
+
+        body:hover canvas { opacity: 0.15; }
+
+        @keyframes scrollText {
+            from { transform: translateY(0); }
+            to { transform: translateY(-50%); }
+        }
+
+        canvas { 
+            position: relative;
+            z-index: 10;
+            cursor: move;
+            transition: opacity 0.8s ease;
+        }
+
+        /* The Special Button */
+        #secretButton {
+            position: absolute;
+            bottom: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 30;
+            padding: 12px 25px;
+            background: rgba(255, 50, 50, 0.8);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            font-family: 'Segoe UI', sans-serif;
+            font-weight: bold;
+            cursor: pointer;
+            opacity: 0; /* Hidden initially */
+            visibility: hidden;
+            transition: opacity 1.5s ease, visibility 1.5s ease, background 0.3s;
+            box-shadow: 0 0 20px rgba(255, 50, 50, 0.4);
+        }
+
+        #secretButton.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        #secretButton:hover {
+            background: rgba(255, 20, 20, 1);
+            box-shadow: 0 0 30px rgba(255, 50, 50, 0.6);
+        }
+
+        .controls { 
+            position: absolute; bottom: 20px; width: 100%; 
+            text-align: center; color: white; font-family: sans-serif; 
+            z-index: 20; opacity: 0.3; font-size: 0.7rem; letter-spacing: 2px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="text-background"></div>
+    <canvas id="roseCanvas"></canvas>
+    
+    <button id="secretButton" onclick="alert('You matter. More than the tags, more than the uncertainty.')">
+        A Final Message
+    </button>
+
+    <div class="controls">INTERACTIVE 3D ROSE • ROTATE TO REVEAL</div>
+
+    <script>
+        // 1. FILL BACKGROUND WITH TEXT
+        const bg = document.getElementById('text-background');
+        const myMessage = " Apologies for starting this on a hard note on your birthday! But a men doesn't give commitment when he isn't sure, he doesn't feel the worth of himself! That's what may be I am trying to build! To be worthy of things! I know some people doesn't care what i bring to table! They bring love, chaos, fun, emotion and stability in spite of my contribution and 'You' are few amongst the few! Birthday don't mean anything to me because I value people their ethics and wisdom more than anything! You bringing it all in to be a better person everyday, defining love as devotion is inhuman. With all that love, chaos, care, overthinking and anger, you bring a insane peace that i can't disagree! I don't know about tags but 'u matter'. And the two things that I admire about you that you have been constantly asking for are the reselience you show when you are in love, the way you evolve with time have the urge and curiosity to know and be a better person over time, and the second thing is all of that for someone you love is more insane";
+        
+        bg.innerText = (myMessage + " \n\n ").repeat(80);
+
+        // 2. 3D ROSE ENGINE
+        const canvas = document.getElementById('roseCanvas');
+        const ctx = canvas.getContext('2d');
+        let w, h;
+        let rx = 0.7, ry = 0; 
+
+        function resize() {
+            w = canvas.width = window.innerWidth;
+            h = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        function project(x, y, z) {
+            let y1 = y * Math.cos(rx) - z * Math.sin(rx);
+            let z1 = y * Math.sin(rx) + z * Math.cos(rx);
+            let x2 = x * Math.cos(ry) + z1 * Math.sin(ry);
+            let z2 = -x * Math.sin(ry) + z1 * Math.cos(ry);
+            let p = 600 / (600 + z2);
+            return { x: x2 * p + w / 2, y: y1 * p + h / 2, z: z2 };
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, w, h);
+            
+            // Stem
+            ctx.beginPath();
+            ctx.strokeStyle = '#0e2205';
+            ctx.lineWidth = 3;
+            let sTop = project(0, 0, 0);
+            let sBot = project(0, 1000, 0);
+            ctx.moveTo(sTop.x, sTop.y);
+            ctx.lineTo(sBot.x, sBot.y);
+            ctx.stroke();
+
+            // Parametric Rose
+            for (let v = 0; v <= 1; v += 0.02) {
+                ctx.beginPath();
+                for (let phi = 0; phi <= Math.PI * 2.1; phi += 0.1) {
+                    let r = 240 * Math.pow(Math.sin(v * Math.PI / 1.5), 0.5) * (1 + 0.2 * Math.sin(7 * phi + v * 15));
+                    let x = r * Math.sin(phi);
+                    let z = r * Math.cos(phi);
+                    let y = -v * 320 + Math.pow(r/150, 2) * 60;
+
+                    let p = project(x, y, z);
+                    if (phi === 0) ctx.moveTo(p.x, p.y);
+                    else ctx.lineTo(p.x, p.y);
+                }
+                let brightness = Math.floor(100 + v * 130);
+                ctx.strokeStyle = `rgb(${brightness}, ${v * 20}, ${v * 40})`;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+            ry += 0.005;
+            requestAnimationFrame(draw);
+        }
+
+        // Timer to show button after 5 seconds
+        setTimeout(() => {
+            document.getElementById('secretButton').classList.add('visible');
+        }, 5000);
+
+        // Interaction
+        let mDown = false, mx, my;
+        window.onmousedown = e => { mDown = true; mx = e.clientX; my = e.clientY; };
+        window.onmouseup = () => mDown = false;
+        window.onmousemove = e => {
+            if(!mDown) return;
+            ry += (e.clientX - mx) * 0.01;
+            rx += (e.clientY - my) * 0.01;
+            mx = e.clientX; my = e.clientY;
+        };
+
+        draw();
+    </script>
+</body>
+</html>
